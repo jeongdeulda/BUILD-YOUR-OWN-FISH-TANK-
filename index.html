@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BUILD MY OWN FISH TANK!</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Pretendard', sans-serif;
+      font-weight: bold;
+      overflow: hidden;
+    }
+
+    #header {
+      text-align: left;
+      color: black;
+      padding-left: 10px;
+      font-size: 55px;
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 100;
+      background: transparent; 
+    }
+
+    #toolbar {
+      position: fixed;
+      top: 55px;
+      left: 3px;
+      z-index: 10;
+      padding: 10px;
+      border-radius: 5px;
+      display: flex;
+      gap: 10px;
+    }
+
+    #canvas {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+      margin-top: 65px;
+      background: url('Sand.png') center/cover no-repeat;
+    }
+
+    #stickerContainer {
+      display: flex;  
+      flex-direction: row;
+      position: fixed;
+      left: 15px;
+      top: 105px; 
+      gap: 20px;
+    }
+
+    .sticker {
+      width: 50px;
+      transition: width 0.2s ease, height 0.2s ease;
+      cursor: pointer; 
+    }
+
+    #sizeSlider {
+      width: 150px;
+    }
+  </style>
+</head>
+<body>
+    <div id="header">BUILD YOUR OWN FISH TANK!</div>
+
+    <!-- toolbar -->
+    <div id="toolbar">
+      <label for="bgColorPicker" style="margin-top: 3px;">Background color</label>
+      <input type="color" id="bgColorPicker">
+      <label for="sizeSlider" style="margin-top: 3px;">Sticker size</label>
+      <input type="range" id="sizeSlider" min="50" max="500" value="300">
+      <button id="removeBtn">Remove Sticker</button> 
+      <!-- <button id="capture">Take a screenshot</button> -->
+    </div>
+
+    <!-- canvas -->
+    <div id="canvas">
+      <div id="stickerContainer">
+        <img src="Rock1.png" class="sticker">
+        <img src="Rock2.png" class="sticker">
+        <img src="Rock3.png" class="sticker">
+        <img src="Bubble.png" class="sticker">
+        <img src="Plant1.png" class="sticker">
+        <img src="Plant2.png" class="sticker">
+        <img src="Star.png" class="sticker">
+        <img src="Fish1.png" class="sticker">
+        <img src="Fish2.png" class="sticker">
+        <img src="Fish3.png" class="sticker">
+        <img src="Fish4.png" class="sticker">
+        <img src="Fish5.png" class="sticker">
+        <img src="Fish6.png" class="sticker">
+        <img src="Fish7.png" class="sticker">
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const sizeSlider = document.getElementById('sizeSlider');
+        const removeBtn = document.getElementById('removeBtn');
+        const bgColorPicker = document.getElementById('bgColorPicker');
+        let currentSize = sizeSlider.value;
+        let selectedSticker = null;
+
+        // Background color
+        bgColorPicker.addEventListener('input', (event) => {
+            const newColor = event.target.value;
+            canvas.style.backgroundColor = newColor;
+        });
+
+        // Sticker size change with slider 
+        sizeSlider.addEventListener('input', (event) => {
+            currentSize = event.target.value;
+            if (selectedSticker) {
+                selectedSticker.style.width = currentSize + 'px';
+            }
+        });
+
+        // Make sticker draggable
+        function makeDraggable(sticker) {
+            let isDragging = false;
+
+            sticker.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                let shiftX = e.clientX - sticker.getBoundingClientRect().left;
+                let shiftY = e.clientY - sticker.getBoundingClientRect().top;
+
+                function moveAt(pageX, pageY) {
+                    sticker.style.left = pageX - shiftX + 'px';
+                    sticker.style.top = pageY - shiftY + 'px';
+                }
+
+                function onMouseMove(e) {
+                    if (!isDragging) return;
+                    moveAt(e.pageX, e.pageY);
+                }
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', () => {
+                    isDragging = false;
+                    document.removeEventListener('mousemove', onMouseMove);
+                }, { once: true });
+            });
+
+            sticker.addEventListener('click', (e) => {
+                selectedSticker = sticker;
+                currentSize = selectedSticker.style.width.replace('px', '');
+                sizeSlider.value = currentSize;
+            });
+        }
+
+        // Sticker dragged after copy
+        const stickers = document.querySelectorAll('.sticker');
+        stickers.forEach(sticker => {
+            sticker.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                selectedSticker = sticker.cloneNode(true);  
+                selectedSticker.style.position = 'absolute';
+                selectedSticker.style.width = currentSize + 'px'; 
+                selectedSticker.style.left = e.pageX - currentSize / 2 + 'px';
+                selectedSticker.style.top = e.pageY - currentSize / 2 + 'px';
+                canvas.appendChild(selectedSticker);
+                makeDraggable(selectedSticker);
+            });
+        });
+
+        // Delete button event
+        removeBtn.addEventListener('click', () => {
+            if (selectedSticker) {
+                selectedSticker.remove(); 
+                selectedSticker = null;   
+                sizeSlider.value = 300;    
+            }
+        });
+
+        // Screenshot
+     /* const captureBtn = document.getElementById('capture');
+        captureBtn.addEventListener('click', () => {
+            html2canvas(canvas, { scale: 2 }).then(canvasCapture => {
+                const link = document.createElement('a');
+                link.href = canvasCapture.toDataURL('image/png');
+                link.download = 'MyFishtTank.png';
+             link.click();
+            });
+        });
+      */
+
+    </script>
+</body>
+</html>
